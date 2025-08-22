@@ -1,4 +1,12 @@
 import User from '../mongodb/userSchema.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+
+dotenv.config();
+const JWT_SECRET = process.env.JWT_SECRET;
+
 
 export async function signup(req, res) {
   try {
@@ -13,7 +21,13 @@ export async function signup(req, res) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
-    const newUser = await User.create({ name, email, password });
+    const hashPass= await bcrypt.hash(password,10);
+
+    const newUser = await User.create({ name, email, password: hashPass });
+
+    const token = jwt.sign({ id: newUser._id, email: newUser.email }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+
     res.status(201).json({ msg: "User registered successfully", user: newUser });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -21,6 +35,7 @@ export async function signup(req, res) {
 }
 
 export async function signin(req, res) {
+
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -30,11 +45,15 @@ export async function signin(req, res) {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "User not found" });
 
-    if (user.password !== password) {
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
       return res.status(400).json({ msg: "Invalid credentials" });
     }
 
-    res.status(200).json({ msg: "Login successful", user });
+     const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
+
+    res.status(200).json({ msg: "Login successful", user },token);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
