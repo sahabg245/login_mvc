@@ -27,7 +27,6 @@ export async function signup(req, res) {
 
     const token = jwt.sign({ id: newUser._id, email: newUser.email }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-
     res.status(201).json({ msg: "User registered successfully", user: newUser });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -53,7 +52,7 @@ export async function signin(req, res) {
 
      const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
 
-    res.status(200).json({ msg: "Login successful", user },token);
+    res.status(200).json({ msg: "Login successful", user,token });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
